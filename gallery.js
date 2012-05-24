@@ -40,81 +40,64 @@
         return -1;
     });
 
-    var toString = Object.prototype.toString,
-        IE6 = $.browser.msie && $.browser.version == '6.0';
-
-    var Util = {
-        support: function() {
-            var div = document.createElement('div'),
-                vendors = ['Khtml', 'Ms', 'O', 'Moz', 'Webkit'],
-                length = vendors.length;
-            return function(prop) {
-                if (prop in div.style) {
-                    return true;
-                }
-                prop = prop.replace('/^[a-z]/', function(val) {
-                    return val.toUpperCase();
-                });
-                while (length--) {
-                    if ((vendors[length] + prop) in div.style) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-        }(),
-        mix: function(base, target) {
-            if (! base || ! target || ! Util.isPlainObject(target)) {
-                return base;
-            }
-            for (var key in target) {
-                if (target.hasOwnProperty(key)) {
-                    base[key] = target[key];
-                }
-            }
-            return base;
-        },
-        isString: function(val) {
+    var IE6 = $.browser.msie && $.browser.version == '6.0',
+        toString = Object.prototype.toString,
+        isString = function(val) {
             return toString.call(val) === '[object String]';
         },
-        isPlainObject: function(val) {
+        isPlainObject = function(val) {
+
+
             return val && toString.call(val) === '[object Object]' && 'isPrototypeOf' in val;
         },
-        isFunction: function(val) {
+        isFunction = function(val) {
             return toString.call(val) === '[object Function]';
         },
-        isArray: Array.isArray || function(val) {
+        isArray = Array.isArray || function(val) {
             return toString.call(val) === '[object Array]';
         },
-        each: function() {
+        each = function() {
             var R_SPLIT = /[\s|,]+/;
             return function(val, func) {
-                if (! val || ! Util.isFunction(func)) {
+                if (! val || ! isFunction(func)) {
                     return;
                 }
                 val = val.split(R_SPLIT);
                 for (var index = 0, length = val.length, item = val[index];
                      index < length && func.call(item, item, index) !== false;
-                     item = val[++index]) {}
+                     item = val[++index]) {
+                }
             };
         }(),
-        ucfirst: function(val) {
-            if (! Util.isString(val)) {
+        clone = function(object) {
+            if (object == null || typeof object != 'object') {
+                return object;
+            }
+            var temp = new object.constructor(), key;
+            for (key in object) {
+                if (object[key] === object) {
+                    continue;
+                }
+                temp[key] = clone(object[key]);
+            }
+            return temp;
+        },
+        ucfirst = function(val) {
+            if (! isString(val)) {
                 return val;
             }
             return val.charAt(0).toUpperCase() + val.slice(1);
         },
-        template: function(template, values) {
+        template = function(template, values) {
             var key;
-            values = Util.isPlainObject(values) ? values : {};
+            values = isPlainObject(values) ? values : {};
             for (key in values) {
                 if (values.hasOwnProperty(key)) {
                     template = template.replace(new RegExp('{' + key + '}', 'gm'), values[key] || '');
                 }
             }
             return template;
-        }
-    };
+        };
 
     /**
      * 轻量级的 Class.extend() 实现，来自 John Resig
@@ -135,11 +118,10 @@
             initializing = false;
 
             for (var name in proporties) {
-                prototype[name] =
-                    typeof proporties[name] == 'function'
-                        && typeof parent[name] == 'function'
-                        && fnTest.test(proporties[name])
-                        ? (function(name, func) {
+                if (typeof proporties[name] == 'function'
+                    && typeof parent[name] == 'function'
+                    && fnTest.test(proporties[name])) {
+                    prototype[name] = (function(name, func) {
                         return function() {
                             var temp = this.parent;
                             this.parent = parent[name];
@@ -147,8 +129,14 @@
                             this.parent = temp;
                             return ret;
                         };
-                    })(name, proporties[name])
-                        : proporties[name];
+                    })(name, proporties[name]);
+                } else if (isArray(proporties[name])) {
+                    prototype[name] = proporties[name].slice();
+                } else if (isPlainObject(proporties[name])) {
+                    prototype[name] = clone(proporties[name]);
+                } else {
+                    prototype[name] = proporties[name];
+                }
             }
 
             function Class() {
@@ -169,25 +157,24 @@
     var Base = Class.extend({
         name: '',
         element: null,
-        options: {},
         guid: null,
-        events: {},
         _eventNames: '',
         init: function(options) {
             var self = this;
-            if (! Util.isPlainObject(options) || ! options.element) {
+            if (! isPlainObject(options) || ! options.element) {
                 throw new TypeError('参数不正确');
             }
-            options = this.options = Util.mix(this.OPTIONS, options);
+            options = this.options = $.extend({}, this.OPTIONS, options);
             this.guid = this.name.toUpperCase() + ((new Date()).getTime().toString(16));
             this.element = this.options.element.jquery ? this.options.element : $(this.options.element);
-            Util.each(this._eventNames, function(event) {
-                var ucfirst = Util.ucfirst(event),
-                    before = 'before' + ucfirst,
-                    after = 'after' + ucfirst;
+            each(this._eventNames, function(event) {
+                event = ucfirst(event);
+                var before = 'before' + event,
+                    after = 'after' + event;
                 options[before] && (self.bind(before, options[before]));
                 options[after] && (self.bind(after, options[after]));
             });
+            return this;
         },
         find: function(name, context) {
             return (context && context.jquery ? context : this.element).find('[data-' + this.name + '=' + name + ']');
@@ -199,7 +186,9 @@
         },
         trigger: function(event, args) {
             if (event in this.events) {
-                for (var index = 0, func; (func = this.events[event][index++]) && (func.apply(this, args || []) !== false); ) {}
+                for (var index = 0, func;
+                     (func = this.events[event][index++]) && (func.apply(this, args || []) !== false); ) {
+                }
             }
             return this;
         }
@@ -207,18 +196,21 @@
 
     var Slider = Base.extend({
         OPTIONS: {
-            slider: null,
+            element: null,
             photos: [],
             photoWidth: 100,
             photoHeight: 75,
             currentClass: 'current',
             current: 0
         },
-
         name: 'slider',
-        _eventNames: 'scrollStart scrollStop dragStart dragStop show',
+        options: {},
+        events: {},
+
+        _eventNames: 'render show',
         _width: 0,
         _itemWidth: 0,
+        _total: 0,
         _current: -1,
 
         _control: null,
@@ -228,35 +220,47 @@
 
         init: function(options) {
             this.parent(options);
+
+            if (! isArray(this.options.photos)) {
+                this.options.photos = [];
+            }
+
             this._width = this.element.width();
             this._control = this.find('control');
             this._bar = this.find('bar');
             this._items = this.find('items');
+            this._total = this.options.photos.length;
             this._btn = this.find('btn');
+
             this.render();
             return this;
         },
         render: function() {
             var self = this,
                 o = this.options,
-                items = this._items.empty(),
-                item, index = 0, total = o.photos.length;
+                items = this._items.empty().show(),
+                index = 0, total = o.photos.length;
+
+            this.trigger('beforeRender');
 
             // 构建列表
             $.each(o.photos, function(index, photo) {
-                item = $('<li><a hideFocus="true" href="javascript:void(0);"><img /></a></li>').attr('data-slider-index', index);
+                var item = $('<li><a hideFocus="true" href="javascript:void(0);"><img /></a></li>')
+                    .attr('data-slider-index', index);
                 item.find('a,img').css({
                     width: o.photoWidth,
                     height: o.photoHeight
                 });
                 item.find('img').attr('src', photo.thumb || photo).attr('alt', photo.note || '');
-                item.bind('click', function() {
-                    self.show(item.attr('data-slider-index'));
+                item.click(function() {
+                    self.show(index);
                 }).appendTo(items);
+                if (! self._itemWidth) {
+                    self._itemWidth = item.outerWidth(true);
+                }
             });
 
             // 修正小图列表的宽度
-            this._itemWidth = items.eq(0).outerWidth(true);
             items.css({
                 width: this._itemWidth * total
             }).show();
@@ -266,28 +270,53 @@
 
             // TODO 初始化拖拽
 
-
+            this.trigger('afterRender');
             return this;
         },
         show: function(index) {
             var o = this.options,
-                old,
-                item = this._items.children().eq(index);
-            if (! item.length) {
+                items = this._items,
+                item = items.children().eq(index);
+
+            if (! item.length || index === this._current) {
                 return false;
             }
-            old = this._items.children().eq(this._current);
-            old.removeClass(o.currentClass);
+
+            this.trigger('beforeShow', [index]);
+
+            items.children().eq(this._current).removeClass(o.currentClass);
             item.addClass(o.currentClass);
 
+            var total = this._total,
+                visibleWidth = items.parent().innerWidth(),                  // 可见宽度
+                visibleSize = Math.floor(visibleWidth / this._itemWidth),    // 可见个数
+                centerSize = Math.ceil(visibleSize / 2),                     // 水平居中的个数
+                pos = 0;                                                     // 最终用来计算的位置值
+
+            // 总数大于可见数时才滚动
+            if (total > visibleSize) {
+                if (index < centerSize) { // 靠近开始
+                    pos = 0;
+                } else if ((total - (index + 1)) < centerSize) { // 靠近结束
+                    pos = total - visibleSize;
+                } else { // 中间部分
+                    pos = (index + 1) - centerSize;
+                }
+                items.stop(false, true).animate({
+                    left: this._itemWidth * pos * -1
+                });
+            }
+
             this._current = index;
+
+            this.trigger('afterShow', [index]);
             return this;
         }
     });
 
     var Gallery = Base.extend({
         OPTIONS: {
-            gallery: null,
+            element: null,
             photos: [],
             preload: 1,
             autoslide: false,
@@ -303,9 +332,12 @@
             thumbCurrentClass: 'current'
         },
         name: 'gallery',
+        options: {},
+        events: {},
+
         slider: null,
 
-        _eventNames: 'prev next jumpTo show slide stop fullscreen exit',
+        _eventNames: 'render prev next jumpTo show slide stop fullscreen exit',
         _width: 0,
         _height: 0,
 
@@ -329,6 +361,10 @@
 
         init: function(options) {
             this.parent(options);
+
+            if (! isArray(this.options.photos)) {
+                this.options.photos = [];
+            }
 
             options = this.options;
             this._width = this.element.width();
@@ -375,10 +411,15 @@
                 height: o.minHeight
             }));
 
-            // TODO 初始化 slider，双向绑定事件
-            slider && this.bind('afterShow', function() {
-                slider.show(self._current);
-            });
+            // 初始化 slider，双向绑定事件
+            if (slider) {
+                this.bind('afterShow', function(index) {
+                    slider.show(index);
+                });
+                slider.bind('afterShow', function(index) {
+                    self.jumpTo(index);
+                });
+            }
 
             // 滚动视图到图片区域
             o.scrollIntoView && $('html, body').animate({
@@ -434,7 +475,7 @@
                 self._counterNow.html(index + 1);
             });
 
-            // 处理结束后显示的推荐信息
+            // TODO (测试只有一张图片或没有图片的情况) 处理结束后显示的推荐信息
             if (this._end.length) {
                 this.bind('beforeShow', function(index) {
                     if (index === self._total) {
@@ -514,7 +555,7 @@
                 style.push('width: ' + (o.maxWidth ? Math.min(this._width, o.maxWidth) : this._width) + 'px');
             }
             style = style.length ? (' style="' + style.join('; ') + '"') : '';
-            return '<img src="' + photo.big + '" data-gallery="' + index + '" ' + style + ' />';
+            return '<img src="' + (photo.big || photo) + '" data-gallery="' + index + '" ' + style + ' />';
         },
         resizeTrigger: function(width, height) {
             var o = this.options,
@@ -535,7 +576,7 @@
                 loaded = [];
             return function(photos) {
                 var self = this, photo;
-                if (photos && Util.isArray(photos)) {
+                if (photos && isArray(photos)) {
                     while (photo = photos.shift()) {
                         loaded.indexOf(photo) === -1 && queue.push(photo);
                     }
@@ -563,7 +604,7 @@
                 var self = this,
                     src = photo.big || photo, img, complete;
 
-                config = Util.isPlainObject(config) ? config : {};
+                config = isPlainObject(config) ? config : {};
 
                 if (queue[src]) {
                     if (queue[src].state === 'loading') {
@@ -645,7 +686,7 @@
                 return false;
             }
 
-            event = Util.ucfirst(event);
+            event = ucfirst(event);
             this.trigger('beforeShow', [index, 'before' + event]);
 
             // 序号合法判断，放在这里是为了能够监听到 beforeShow 事件的不规范序号，
@@ -682,10 +723,11 @@
                     }
                 });
             }
+            return this;
         },
 
-        showThumbList: function() {},
-        hideThumbList: function() {},
+        showList: function() {},
+        hideList: function() {},
 
         slide: function() {},
         stop: function() {},
@@ -721,7 +763,7 @@
 
     $.fn.gallery = function(elem, options) {
         return this.each(function() {
-            options = Util.isPlainObject(options) || {};
+            options = isPlainObject(options) || {};
             options.element = elem;
             $(this).data('gallery', new Gallery(options));
         });

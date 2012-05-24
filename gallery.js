@@ -1,12 +1,11 @@
 /**
+ * 类腾讯高清组图展示组件
  *
- *
- * <code>
- *
- * </code>
- *
+ * @copyright (c) CmsTop {@link http://www.cmstop.com}
+ * @author    micate {@link http://micate.me}
+ * @homepage  @github {@link http://github.com/micate/gallery}
+ * @version   $Id$
  */
-
 (function($, root) {
 
     Array.prototype.indexOf || (Array.prototype.indexOf = function(searchElement, fromIndex) {
@@ -46,8 +45,6 @@
             return toString.call(val) === '[object String]';
         },
         isPlainObject = function(val) {
-
-
             return val && toString.call(val) === '[object Object]' && 'isPrototypeOf' in val;
         },
         isFunction = function(val) {
@@ -207,11 +204,17 @@
         options: {},
         events: {},
 
-        _eventNames: 'render show',
+        _eventNames: 'render show drag',
+
         _width: 0,
         _itemWidth: 0,
+        _totalWidth: 0,
+        _visibleWidth: 0,
+        _visibleSize: 0,
+
         _total: 0,
         _current: -1,
+        _draging: false,
 
         _control: null,
         _bar: null,
@@ -260,15 +263,21 @@
                 }
             });
 
-            // 修正小图列表的宽度
-            items.css({
-                width: this._itemWidth * total
-            }).show();
+            // 修正缩略图列表的宽度
+            this._totalWidth = this._itemWidth * total;
+            items.css('width', this._totalWidth).show();
 
-            // 将当前页的小图滚动进入视图
+            // 计算一些数值
+            this._visibleWidth = items.parent().innerWidth();
+            this._visibleSize = Math.floor(this._visibleWidth / this._itemWidth);
+
+            // 显示预设缩略图
             this.show(o.current || 0);
 
-            // TODO 初始化拖拽
+            // 初始化滚动条
+            if (this._bar && this._bar.length) {
+                this.renderScrollbar();
+            }
 
             this.trigger('afterRender');
             return this;
@@ -288,10 +297,9 @@
             item.addClass(o.currentClass);
 
             var total = this._total,
-                visibleWidth = items.parent().innerWidth(),                  // 可见宽度
-                visibleSize = Math.floor(visibleWidth / this._itemWidth),    // 可见个数
-                centerSize = Math.ceil(visibleSize / 2),                     // 水平居中的个数
-                pos = 0;                                                     // 最终用来计算的位置值
+                visibleSize = this._visibleSize,              // 可见个数
+                centerSize = Math.ceil(visibleSize / 2),      // 水平居中的个数
+                pos = 0;                                      // 最终用来计算的位置值
 
             // 总数大于可见数时才滚动
             if (total > visibleSize) {
@@ -311,6 +319,108 @@
 
             this.trigger('afterShow', [index]);
             return this;
+        },
+        // TODO 未完成
+        renderScrollbar: function() {
+            var self = this,
+                startLeft, startX,
+                btn = this._btn,
+                items = this._items,
+                btnParentWidth = btn.parent().innerWidth(),
+                btnWidth = Math.floor(btnParentWidth * (
+                    this._total > this._visibleSize
+                        ? (this._visibleSize || 1) / (this._total || 1)
+                        : 1
+                )),
+                btnMaxLeftValue = (btnParentWidth - btnWidth) || 1,
+                itemsScrollWidth = (this._total - 1 - (this._visibleSize - this._total % this._visibleSize)) * this._itemWidth;
+
+            // 修正滚动条宽度
+            btn.width(btnWidth);
+
+            // 总数小于等于可见数时不初始化滚动条
+            if (this._total <= this._visibleSize) {
+                return this;
+            }
+
+            this.bind('afterShow', function() {
+
+            });
+
+            // 拖动查看
+            this.bind('afterDrag', function() {
+                // TODO
+            });
+            // TODO 点击向左向右查看
+
+            btn.bind('mousedown.slider', function(ev) {
+                var position = btn.position(),
+                    doc = $(document);
+                self._draging && doc.trigger('mouseup.slider');
+                self._draging = true;
+
+                startLeft = position.left;
+                startX = ev.pageX;
+
+                doc.bind('mousemove.slider', function(ed) {
+                    if (! self._draging) {
+                        return;
+                    }
+                    var left = startLeft + ed.clientX - startX;
+                    left = Math.max(0, Math.min(left, btnMaxLeftValue));
+                    btn.css('left', left);
+                    items.css('left', Math.floor(left / btnMaxLeftValue * itemsScrollWidth) * -1);
+                });
+                doc.bind('selectstart.slider', function() {
+                    return false;
+                });
+                doc.bind('mouseup.slider', function() {
+                    doc.unbind('.slider');
+                    self._draging = false;
+                });
+                ev.preventDefault();
+            });
+        },
+        updateScrollbar: function() {
+
+        }
+    });
+
+    /**
+     * 以分页列表方式展示小图
+     *
+     * @type {PhotoList}
+     */
+    var PhotoList = Base.extend({
+        OPTIONS: {
+            element: null,
+            photos: [],
+            photoWidth: 100,
+            photoHeight: 75,
+            currentClass: 'current',
+            current: 0
+        },
+        name: 'photolist',
+        options: {},
+        events: {},
+
+        _eventNames: 'render show',
+
+        init: function(options) {
+            this.parent(options);
+
+            if (! isArray(this.options.photos)) {
+                this.options.photos = [];
+            }
+        },
+        render: function() {
+
+        },
+        show: function() {
+
+        },
+        hide: function() {
+
         }
     });
 
@@ -336,6 +446,7 @@
         events: {},
 
         slider: null,
+        photoList: null,
 
         _eventNames: 'render prev next jumpTo show slide stop fullscreen exit',
         _width: 0,

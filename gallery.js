@@ -536,6 +536,7 @@
         _hasNext: false,
 
         _photo: null,
+        _photoDescription: null,
         _photoPrev: null,
         _photoNext: null,
         _loading: null,
@@ -560,6 +561,7 @@
             this._counterNow = this.find('counter-now');
             this._counterTotal = this.find('counter-total');
             this._photo = this.find('photo-items').empty();
+            this._photoDescription = this.find('photo-description');
             this._photoPrev = this.find('photo-prev');
             this._photoNext = this.find('photo-next');
             this._content = this.find('content');
@@ -736,13 +738,18 @@
             return this;
         },
         renderPhoto: function(photo, index, width, height) {
-            var o = this.options, style = [];
-            // 防止图片过宽破坏页面布局，拼接 style 来应对 IE6 不支持 max-width 的问题
+            var o = this.options,
+                img = $('<img />').attr('src', photo.big || photo).attr('data-gallery', index);
+
+            // 防止图片过宽破坏页面布局
             if ((o.maxWidth && width > o.maxWidth) || width > this._width) {
-                style.push('width: ' + (o.maxWidth ? Math.min(this._width, o.maxWidth) : this._width) + 'px');
+                img.css('width', o.maxWidth ? Math.min(this._width, o.maxWidth) : this._width);
             }
-            style = style.length ? (' style="' + style.join('; ') + '"') : '';
-            return '<img src="' + (photo.big || photo) + '" data-gallery="' + index + '" ' + style + ' />';
+            if ((o.minHeight && height < o.minHeight)) {
+                img.css('margin-top', Math.floor((o.minHeight - height) / 2));
+            }
+
+            return img;
         },
         resizeTrigger: function(width, height) {
             var o = this.options,
@@ -886,6 +893,9 @@
 
             photoToShow = this.find(index, photo);
             function callback(width, height) {
+                self.find(current, photo).hide();
+                photoToShow.css('display', '');
+                self._photoDescription.html(self.options.photos[index].note || '');
                 self.resizeTrigger(width, height);
                 self._current = index;
                 self.trigger('after' + event, [index]);
@@ -893,18 +903,13 @@
             }
             // 已加载过
             if (photoToShow.length) {
-                this.find(current, photo).hide();
-                photoToShow.show();
                 callback(photoToShow.width(), photoToShow.height());
             } else {
                 this.loadImage(this.options.photos[index], {
                     success: function(image, width, height) {
-                        self.find(current, photo).hide();
                         // 如果队列中的图片被绑定了多个回调，有可能该图片已经被插入到 DOM 中
-                        if (self.find(index, photo).length) {
-                            self.find(index, photo).show();
-                        } else {
-                            photo.append(self.renderPhoto(image, index, width, height));
+                        if (! self.find(index, photo).length) {
+                            photoToShow = self.renderPhoto(image, index, width, height).hide().appendTo(photo);
                         }
                         callback(width, height);
                     }

@@ -259,6 +259,7 @@ html {
 
 .mod-gallery .gallery-thumb-list {
     width: 100%;
+    position: relative;
     overflow: hidden;
     padding-bottom: 6px;
 }

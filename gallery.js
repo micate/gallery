@@ -129,7 +129,7 @@
                     })(name, proporties[name]);
                 } else if (isArray(proporties[name])) {
                     prototype[name] = proporties[name].slice();
-                } else if (isPlainObject(proporties[name])) {
+                } else if (isPlainObject(proporties[name]) || isFunction(proporties[name])) {
                     prototype[name] = clone(proporties[name]);
                 } else {
                     prototype[name] = proporties[name];
@@ -152,7 +152,10 @@
     }();
 
     var Base = Class.extend({
+        OPTIONS: {},
         name: '',
+        options: {},
+        events: {},
         element: null,
         guid: null,
         _eventNames: '',
@@ -201,16 +204,15 @@
             current: 0
         },
         name: 'slider',
-        options: {},
-        events: {},
 
-        _eventNames: 'render show drag',
+        _eventNames: 'render show updateScrollbarPosition updateThumbListPosition',
 
         _width: 0,
         _itemWidth: 0,
         _totalWidth: 0,
         _visibleWidth: 0,
         _visibleSize: 0,
+        _itemsScrollWidth: 0,
 
         _total: 0,
         _current: -1,
@@ -220,6 +222,8 @@
         _bar: null,
         _items: null,
         _btn: null,
+        _itemsLeft: null,
+        _itemsRight: null,
 
         init: function(options) {
             this.parent(options);
@@ -232,6 +236,8 @@
             this._control = this.find('control');
             this._bar = this.find('bar');
             this._items = this.find('items');
+            this._itemsLeft = this.find('items-left');
+            this._itemsRight = this.find('items-right');
             this._total = this.options.photos.length;
             this._btn = this.find('btn');
 
@@ -270,6 +276,45 @@
             // 计算一些数值
             this._visibleWidth = items.parent().innerWidth();
             this._visibleSize = Math.floor(this._visibleWidth / this._itemWidth);
+            this._itemsScrollWidth = (this._total - 1 - (this._visibleSize - this._total % this._visibleSize)) * this._itemWidth;
+
+            // 按钮点击向左向右滚动
+            var interval,
+                fps = 13,
+                speed = 200,
+                moveStop = function() {
+                    interval && clearInterval(interval);
+                },
+                moveLeft = function() {
+                    var left = Math.abs(parseInt(items.css('left')));
+                    left = Math.max(0, Math.ceil(left - self._itemsScrollWidth / speed));
+                    self.updateThumbListPosition(left * -1);
+                    if (left === 0) {
+                        moveStop();
+                    }
+                },
+                moveRight = function() {
+                    var left = Math.abs(parseInt(items.css('left')));
+                    left = Math.min(self._itemsScrollWidth, Math.ceil(left + self._itemsScrollWidth / speed));
+                    self.updateThumbListPosition(left * -1);
+                    if (left === self._itemsScrollWidth) {
+                        moveStop();
+                    }
+                };
+            this._itemsLeft.bind('mousedown', function() {
+                moveStop();
+                interval = setInterval(moveLeft, fps);
+            });
+            this._itemsLeft.bind('mouseup', function() {
+                moveStop();
+            });
+            this._itemsRight.bind('mousedown', function() {
+                moveStop();
+                interval = setInterval(moveRight, fps);
+            });
+            this._itemsRight.bind('mouseup', function() {
+                moveStop();
+            });
 
             // 显示预设缩略图
             this.show(o.current || 0);
@@ -310,9 +355,7 @@
                 } else { // 中间部分
                     pos = (index + 1) - centerSize;
                 }
-                items.stop(false, true).animate({
-                    left: this._itemWidth * pos * -1
-                });
+                this.updateThumbListPosition(this._itemWidth * pos * -1, true);
             }
 
             this._current = index;
@@ -320,20 +363,19 @@
             this.trigger('afterShow', [index]);
             return this;
         },
-        // TODO 未完成
         renderScrollbar: function() {
             var self = this,
                 startLeft, startX,
                 btn = this._btn,
-                items = this._items,
-                btnParentWidth = btn.parent().innerWidth(),
+                btnParent = btn.parent(),
+                btnParentWidth = btnParent.innerWidth(),
                 btnWidth = Math.floor(btnParentWidth * (
                     this._total > this._visibleSize
                         ? (this._visibleSize || 1) / (this._total || 1)
                         : 1
                 )),
                 btnMaxLeftValue = (btnParentWidth - btnWidth) || 1,
-                itemsScrollWidth = (this._total - 1 - (this._visibleSize - this._total % this._visibleSize)) * this._itemWidth;
+                itemsScrollWidth = this._itemsScrollWidth;
 
             // 修正滚动条宽度
             btn.width(btnWidth);
@@ -343,16 +385,12 @@
                 return this;
             }
 
-            this.bind('afterShow', function() {
-
+            // 缩略图位置变化后改变滚动条位置
+            this.bind('afterUpdateThumbListPosition', function(left, animate) {
+                self.updateScrollbarPosition(Math.max(0, Math.min(Math.floor(Math.abs(left) / itemsScrollWidth * btnMaxLeftValue), btnMaxLeftValue)), animate);
             });
 
-            // 拖动查看
-            this.bind('afterDrag', function() {
-                // TODO
-            });
-            // TODO 点击向左向右查看
-
+            // 拖动滚动条查看
             btn.bind('mousedown.slider', function(ev) {
                 var position = btn.position(),
                     doc = $(document);
@@ -368,8 +406,8 @@
                     }
                     var left = startLeft + ed.clientX - startX;
                     left = Math.max(0, Math.min(left, btnMaxLeftValue));
-                    btn.css('left', left);
-                    items.css('left', Math.floor(left / btnMaxLeftValue * itemsScrollWidth) * -1);
+                    // 直接更新缩略图位置而非采用绑定触发方式，避免循环绑定；滚动条的更新采用触发方式
+                    self.updateThumbListPosition(Math.floor(left / btnMaxLeftValue * itemsScrollWidth) * -1)
                 });
                 doc.bind('selectstart.slider', function() {
                     return false;
@@ -378,11 +416,53 @@
                     doc.unbind('.slider');
                     self._draging = false;
                 });
-                ev.preventDefault();
+                // 阻止默认事件和冒泡，阻止默认很重要，不触发浏览器的拖拽事件
+                return false;
             });
-        },
-        updateScrollbar: function() {
 
+            // 滚动条父元素点击后触发滚动条滑动
+            btnParent.bind('mousedown', function(ev) {
+                var left = ev.pageX - btnParent.position().left,
+                    oldLeft = btn.position().left,
+                    scrollbarLeft = oldLeft,
+                    thumblistLeft;
+                if (left < oldLeft) { // 左移一个长度
+                    scrollbarLeft = oldLeft - btnWidth;
+                } else if (left > (oldLeft + btnWidth)) { // 右移一个长度
+                    scrollbarLeft = oldLeft + btnWidth;
+                }
+                scrollbarLeft = Math.max(0, Math.min(scrollbarLeft, btnMaxLeftValue)),
+                thumblistLeft = Math.floor(scrollbarLeft / btnMaxLeftValue * itemsScrollWidth) * -1;
+                self.updateThumbListPosition(thumblistLeft, true);
+            });
+
+            return this;
+        },
+        updateScrollbarPosition: function(left, animate) {
+            this.trigger('beforeUpdateScrollbarPosition', [left, animate]);
+            this._btn.stop(false, true);
+            if (animate) {
+                this._btn.animate({
+                    left: left
+                });
+            } else {
+                this._btn.css('left', left);
+            }
+            this.trigger('afterUpdateScrollbarPosition', [left, animate]);
+            return this;
+        },
+        updateThumbListPosition: function(left, animate) {
+            this.trigger('beforeUpdateThumbListPosition', [left, animate]);
+            this._items.stop(false, true);
+            if (animate) {
+                this._items.animate({
+                    left: left
+                });
+            } else {
+                this._items.css('left', left);
+            }
+            this.trigger('afterUpdateThumbListPosition', [left, animate]);
+            return this;
         }
     });
 
@@ -401,8 +481,6 @@
             current: 0
         },
         name: 'photolist',
-        options: {},
-        events: {},
 
         _eventNames: 'render show',
 
@@ -442,8 +520,6 @@
             thumbCurrentClass: 'current'
         },
         name: 'gallery',
-        options: {},
-        events: {},
 
         slider: null,
         photoList: null,

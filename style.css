@@ -148,8 +148,6 @@ html {
     display: none;
     width: 102px;
     height: 95px;
-    left: 50%;
-    margin-left: -51px;
     top: 50%;
     margin-top: -47px;
     outline: none;
@@ -158,11 +156,13 @@ html {
     background: transparent no-repeat center center;
 }
 .mod-gallery .gallery-photo-prev a {
+    left: 15px;
     background-image: url(images/prev.png);
     _filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='://gallery.loc/images/prev.png');
     _background-image: none;
 }
 .mod-gallery .gallery-photo-next a {
+    right: 15px;
     background-image: url(images/next.png);
     _filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='://gallery.loc/images/next.png');
     _background-image: none;

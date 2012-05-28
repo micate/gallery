@@ -407,7 +407,8 @@
                     var left = startLeft + ed.clientX - startX;
                     left = Math.max(0, Math.min(left, btnMaxLeftValue));
                     // 直接更新缩略图位置而非采用绑定触发方式，避免循环绑定；滚动条的更新采用触发方式
-                    self.updateThumbListPosition(Math.floor(left / btnMaxLeftValue * itemsScrollWidth) * -1)
+                    self.updateThumbListPosition(Math.floor(left / btnMaxLeftValue * itemsScrollWidth) * -1);
+                    ed.preventDefault();
                 });
                 doc.bind('selectstart.slider', function() {
                     return false;
@@ -658,7 +659,7 @@
                 nextTrigger.is(':visible') && nextTrigger.fadeOut();
             });
 
-            // TODO 同步更新附加信息
+            // 同步更新附加信息
             this.bind('afterShow', function(index) {
                 // 计数器
                 self._counterNow.html(index + 1);

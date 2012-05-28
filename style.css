@@ -55,8 +55,18 @@ html {
     padding-left: 15px;
     color: inherit;
     text-decoration: none;
-    background: transparent url(images/action.png) no-repeat 0 3px;
+    background: transparent url(images/icon.gif) no-repeat 0 3px;
 }
+.mod-gallery .gallery-toolbar a.gallery-fullscreen {
+    background-position: 0 -30px;
+}
+.mod-gallery .gallery-toolbar a.gallery-auto-play {
+    background-position: 1px 4px;
+}
+.mod-gallery .gallery-toolbar a.gallery-auto-stop {
+    background-position: 0 -14px;
+}
+
 .mod-gallery .gallery-content {
 }
 .mod-gallery .gallery-photo-description {

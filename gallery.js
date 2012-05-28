@@ -1,6 +1,8 @@
 /**
  * 类腾讯高清组图展示组件
  *
+ * TODO 向前向后、缩略图左右、缩略图本身、滚动条 点击时停止自动播放
+ *
  * @copyright (c) CmsTop {@link http://www.cmstop.com}
  * @author    micate {@link http://micate.me}
  * @homepage  @github {@link http://github.com/micate/gallery}
@@ -417,8 +419,8 @@
                     doc.unbind('.slider');
                     self._draging = false;
                 });
-                // 阻止默认事件和冒泡，阻止默认很重要，不触发浏览器的拖拽事件
-                return false;
+                // 阻止默认事件，不触发浏览器的拖拽事件
+                ev.preventDefault();
             });
 
             // 滚动条父元素点击后触发滚动条滑动
@@ -533,6 +535,8 @@
         _total: 0,
 
         _isFullscreen: false,
+        _isPlaying: false,
+
         _hasPrev: false,
         _hasNext: false,
 
@@ -545,8 +549,11 @@
         _counterTotal: null,
         _content: null,
         _end: null,
+        _autoplay: null,
+        _autostop: null,
 
         _hashParamRegexp: null,
+        _playInterval: null,
 
         init: function(options) {
             this.parent(options);
@@ -574,6 +581,8 @@
                 photoHeight: options.thumbHeight,
                 currentClass: options.thumbCurrentClass
             });
+            this._autoplay = this.find('auto-play');
+            this._autostop = this.find('auto-stop').hide();
 
             this.render();
             return this;
@@ -609,6 +618,11 @@
                 slider.bind('afterShow', function(index) {
                     self.jumpTo(index);
                 });
+                slider.element.bind('mousedown', function() {
+                    if (self._isPlaying) {
+                        self.stop();
+                    }
+                });
             }
 
             // 滚动视图到图片区域
@@ -637,10 +651,16 @@
                 }
             });
             prev.click(function() {
+                if (self._isPlaying) {
+                    self.stop();
+                }
                 self.prev();
                 return false;
             });
             next.click(function() {
+                if (self._isPlaying) {
+                    self.stop();
+                }
                 self.next();
                 return false;
             });
@@ -675,6 +695,13 @@
                     }
                 });
             }
+
+            // 如果要显示的序号大于最后一张，并且处于自动播放状态，就停止播放
+            this.bind('beforeShow', function(index) {
+                if (index === self._total) {
+                    self.stop();
+                }
+            });
 
             // 预加载图片
             o.preload && this.bind('afterShow', function(index) {
@@ -734,6 +761,24 @@
                     default:
                         break;
                 }
+            });
+
+            // 自动播放
+            this._autoplay.click(function() {
+                self.slide();
+                return false;
+            });
+            this._autostop.click(function() {
+                self.stop();
+                return false;
+            });
+            this.bind('beforeSlide', function() {
+                self._autoplay.hide();
+                self._autostop.css('display', '');
+            });
+            this.bind('afterStop', function() {
+                self._autoplay.css('display', '');
+                self._autostop.hide();
             });
 
             return this;
@@ -922,8 +967,35 @@
         showList: function() {},
         hideList: function() {},
 
-        slide: function() {},
-        stop: function() {},
+        slide: function() {
+            if (this._isPlaying) {
+                return false;
+            }
+
+            var self = this;
+            this._isPlaying = true;
+            this.trigger('beforeSlide', [this._current]);
+
+            this._playInterval = setInterval(function() {
+                self.next();
+            }, 3000);
+
+            this.trigger('afterSlide');
+            return this;
+        },
+        stop: function() {
+            if (! this._isPlaying) {
+                return false;
+            }
+
+            this.trigger('beforeStop', [this._current, this._playInterval]);
+
+            this._playInterval && clearTimeout(this._playInterval);
+            this._isPlaying = false;
+
+            this.trigger('afterStop', [this._current]);
+            return this;
+        },
 
         fullscreen: function() {
             var elem = this._content[0];

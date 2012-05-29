@@ -281,42 +281,44 @@
             this._itemsScrollWidth = (this._total - 1 - (this._visibleSize - this._total % this._visibleSize)) * this._itemWidth;
 
             // 按钮点击向左向右滚动
-            var interval,
-                fps = 13,
-                speed = 200,
-                moveStop = function() {
-                    interval && clearInterval(interval);
-                },
-                moveLeft = function() {
-                    var left = Math.abs(parseInt(items.css('left')));
-                    left = Math.max(0, Math.ceil(left - self._itemsScrollWidth / speed));
-                    self.updateThumbListPosition(left * -1);
-                    if (left === 0) {
-                        moveStop();
-                    }
-                },
-                moveRight = function() {
-                    var left = Math.abs(parseInt(items.css('left')));
-                    left = Math.min(self._itemsScrollWidth, Math.ceil(left + self._itemsScrollWidth / speed));
-                    self.updateThumbListPosition(left * -1);
-                    if (left === self._itemsScrollWidth) {
-                        moveStop();
-                    }
-                };
-            this._itemsLeft.bind('mousedown', function() {
-                moveStop();
-                interval = setInterval(moveLeft, fps);
-            });
-            this._itemsLeft.bind('mouseup', function() {
-                moveStop();
-            });
-            this._itemsRight.bind('mousedown', function() {
-                moveStop();
-                interval = setInterval(moveRight, fps);
-            });
-            this._itemsRight.bind('mouseup', function() {
-                moveStop();
-            });
+            if (this._total > this._visibleSize) {
+                var interval,
+                    fps = 13,
+                    speed = 200,
+                    moveStop = function() {
+                        interval && clearInterval(interval);
+                    },
+                    moveLeft = function() {
+                        var left = Math.abs(parseInt(items.css('left')));
+                        left = Math.max(0, Math.ceil(left - Math.ceil(self._itemsScrollWidth / speed)));
+                        self.updateThumbListPosition(left * -1);
+                        if (left === 0) {
+                            moveStop();
+                        }
+                    },
+                    moveRight = function() {
+                        var left = Math.abs(parseInt(items.css('left')));
+                        left = Math.min(self._itemsScrollWidth, Math.ceil(left + Math.ceil(self._itemsScrollWidth / speed)));
+                        self.updateThumbListPosition(left * -1);
+                        if (left === self._itemsScrollWidth) {
+                            moveStop();
+                        }
+                    };
+                this._itemsLeft.bind('mousedown', function() {
+                    moveStop();
+                    interval = setInterval(moveLeft, fps);
+                });
+                this._itemsLeft.bind('mouseup', function() {
+                    moveStop();
+                });
+                this._itemsRight.bind('mousedown', function() {
+                    moveStop();
+                    interval = setInterval(moveRight, fps);
+                });
+                this._itemsRight.bind('mouseup', function() {
+                    moveStop();
+                });
+            }
 
             // 显示预设缩略图
             this.show(o.current || 0);
@@ -685,7 +687,7 @@
                 self._counterNow.html(index + 1);
             });
 
-            // TODO (测试只有一张图片或没有图片的情况) 处理结束后显示的推荐信息
+            // 处理结束后显示的推荐信息
             if (this._end.length) {
                 this.bind('beforeShow', function(index) {
                     if (index === self._total) {
@@ -964,11 +966,15 @@
             return this;
         },
 
-        showList: function() {},
-        hideList: function() {},
+        showList: function() {
+
+        },
+        hideList: function() {
+
+        },
 
         slide: function() {
-            if (this._isPlaying) {
+            if (this._isPlaying || ! this._total) {
                 return false;
             }
 

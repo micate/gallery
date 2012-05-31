@@ -47,14 +47,18 @@
                 <a href="#">[详细]</a>
             </p>
         </div>
-        <div class="gallery-toolbar">
-            <span>
-                <a data-gallery="fullscreen" class="gallery-fullscreen" href="javascript:void(0);" hideFocus="true">全屏</a>
-                <a data-gallery="auto-play" class="gallery-auto-play" href="javascript:void(0);" hideFocus="true">幻灯播放</a>
-                <a data-gallery="auto-stop" class="gallery-auto-stop" href="javascript:void(0);" hideFocus="true">停止播放</a>
-            </span>
-        </div>
         <div class="gallery-content" data-gallery="content">
+            <div class="gallery-toolbar">
+                <span style="float: right;">
+                    <a data-gallery="view-origin" class="gallery-view-origin" href="javascript:void(0);" hideFocus="true" target="_blank">查看原图</a>
+                    <a data-gallery="view-list" class="gallery-view-list" href="javascript:void(0);" hideFocus="true">全部图片</a>
+                </span>
+                <span style="float: left;">
+                    <a data-gallery="fullscreen" class="gallery-fullscreen" href="javascript:void(0);" hideFocus="true">全屏</a>
+                    <a data-gallery="auto-play" class="gallery-auto-play" href="javascript:void(0);" hideFocus="true">幻灯播放</a>
+                    <a data-gallery="auto-stop" class="gallery-auto-stop" href="javascript:void(0);" hideFocus="true">停止播放</a>
+                </span>
+            </div>
             <div class="gallery-photo">
                 <div class="gallery-photo-items" data-gallery="photo-items"></div>
                 <div class="gallery-photo-prev" data-gallery="photo-prev">
@@ -76,58 +80,75 @@
                     中新社发&nbsp;骆云飞&nbsp;摄&nbsp;
                 </p>
             </div>
-        </div>
-        <div class="gallery-footer">
-            <div class="clearfix">
-                <span class="gallery-prev">
-                    <a href="#">
-                        <img src="photos/prev.jpg" alt="">
-                        <span>&lt; 上一图集</span>
-                    </a>
-                </span>
-                <span class="gallery-next">
-                    <a href="#">
-                        <img src="photos/next.jpg" alt="">
-                        <span>下一图集 &gt;</span>
-                    </a>
-                </span>
-                <div class="gallery-thumb" data-gallery="slider">
-                    <span class="gallery-thumb-prev">
-                        <a href="javascript:void(0);" hideFocus="true" data-slider="items-left"></a>
+            <div class="gallery-footer">
+                <div class="clearfix">
+                    <span class="gallery-prev">
+                        <a href="#">
+                            <img src="photos/prev.jpg" alt="">
+                            <span>&lt; 上一图集</span>
+                        </a>
                     </span>
-                    <span class="gallery-thumb-next">
-                        <a href="javascript:void(0);" hideFocus="true" data-slider="items-right"></a>
+                    <span class="gallery-next">
+                        <a href="#">
+                            <img src="photos/next.jpg" alt="">
+                            <span>下一图集 &gt;</span>
+                        </a>
                     </span>
-                    <div class="gallery-thumbs" data-slider="control">
-                        <div class="gallery-thumb-list">
-                            <ul class="gallery-thumb-items" data-slider="items">
-                                <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/1.jpg" alt=""></a></li>
-                                <li class="gallery-thumb-current"><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/2.jpg" alt=""></a></li>
-                                <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/3.jpg" alt=""></a></li>
-                                <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/4.jpg" alt=""></a></li>
-                                <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/5.jpg" alt=""></a></li>
-                                <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/6.jpg" alt=""></a></li>
-                                <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/7.jpg" alt=""></a></li>
-                            </ul>
-                        </div>
-                        <div class="gallery-thumb-bar mod-bar" data-slider="bar">
-                            <span class="bar-left"></span>
-                            <span class="bar-right"></span>
-                            <div class="bar-body">
-                                <div class="bar-content">
-                                    <a class="bar-btn" href="javascript:void(0);" hideFocus="true" data-slider="btn">
-                                        <b class="bar-btn-left"></b>
-                                        <b class="bar-btn-right"></b>
-                                        <span class="bar-btn-body">
-                                            <span>
-                                                <b class="bar-btn-content"></b>
+                    <div class="gallery-thumb" data-gallery="slider">
+                        <span class="gallery-thumb-prev">
+                            <a href="javascript:void(0);" hideFocus="true" data-slider="items-left"></a>
+                        </span>
+                        <span class="gallery-thumb-next">
+                            <a href="javascript:void(0);" hideFocus="true" data-slider="items-right"></a>
+                        </span>
+                        <div class="gallery-thumbs" data-slider="control">
+                            <div class="gallery-thumb-list">
+                                <ul class="gallery-thumb-items" data-slider="items">
+                                    <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/1.jpg" alt=""></a></li>
+                                    <li class="gallery-thumb-current"><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/2.jpg" alt=""></a></li>
+                                    <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/3.jpg" alt=""></a></li>
+                                    <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/4.jpg" alt=""></a></li>
+                                    <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/5.jpg" alt=""></a></li>
+                                    <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/6.jpg" alt=""></a></li>
+                                    <li><a hideFocus="true" href="javascript:void(0);"><img src="photos/thumb/7.jpg" alt=""></a></li>
+                                </ul>
+                            </div>
+                            <div class="gallery-thumb-bar mod-bar" data-slider="bar">
+                                <span class="bar-left"></span>
+                                <span class="bar-right"></span>
+                                <div class="bar-body">
+                                    <div class="bar-content">
+                                        <a class="bar-btn" href="javascript:void(0);" hideFocus="true" data-slider="btn">
+                                            <b class="bar-btn-left"></b>
+                                            <b class="bar-btn-right"></b>
+                                            <span class="bar-btn-body">
+                                                <span>
+                                                    <b class="bar-btn-content"></b>
+                                                </span>
                                             </span>
-                                        </span>
-                                    </a>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div class="gallery-photolist" data-gallery="photolist">
+                <ul class="clearfix gallery-photolist-items" data-photolist="items">
+                    <!--<li>
+                        <a href="javascript:void(0);" hideFocus="true"></a>
+                    </li>-->
+                </ul>
+                <div class="gallery-photo-page mod-page" data-photolist="pager">
+                    <span class="page-prev" data-pager="prev"><a href="javascript:void(0);" hideFocus="true">上一页</a></span>
+                    <ul class="page-items" data-pager="items">
+                        <!--<li class="current"><a href="javascript:void(0);" hideFocus="true">1</a></li>
+                        <li><a href="javascript:void(0);" hideFocus="true">2</a></li>
+                        <li><a href="javascript:void(0);" hideFocus="true">3</a></li>
+                        <li><a href="javascript:void(0);" hideFocus="true">4</a></li>-->
+                    </ul>
+                    <span class="page-next" data-pager="next"><a href="javascript:void(0);" hideFocus="true">下一页</a></span>
                 </div>
             </div>
         </div>
@@ -234,6 +255,111 @@
                 small: 'http://gallery.loc/photos/small/13.jpg',
                 thumb: 'http://gallery.loc/photos/thumb/13.jpg',
                 note: '13'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/14.jpg',
+                small: 'http://gallery.loc/photos/small/14.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/14.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/15.jpg',
+                small: 'http://gallery.loc/photos/small/15.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/15.jpg',
+                note: '14'
+            }, {
+                big: 'http://gallery.loc/photos/big/16.jpg',
+                small: 'http://gallery.loc/photos/small/16.jpg',
+                thumb: 'http://gallery.loc/photos/thumb/16.jpg',
+                note: '14'
             }, {
                 big: 'http://gallery.loc/photos/big/14.jpg',
                 small: 'http://gallery.loc/photos/small/14.jpg',

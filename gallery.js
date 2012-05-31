@@ -1,11 +1,10 @@
 /**
  * 类腾讯高清组图展示组件
  *
- * TODO 向前向后、缩略图左右、缩略图本身、滚动条 点击时停止自动播放
- *
  * @copyright (c) CmsTop {@link http://www.cmstop.com}
  * @author    micate {@link http://micate.me}
  * @homepage  @github {@link http://github.com/micate/gallery}
+ * @depends   jQuery 1.3.2+
  * @version   $Id$
  */
 (function($, root) {
@@ -154,10 +153,7 @@
     }();
 
     var Base = Class.extend({
-        OPTIONS: {},
         name: '',
-        options: {},
-        events: {},
         element: null,
         guid: null,
         _eventNames: '',
@@ -206,8 +202,10 @@
             current: 0
         },
         name: 'slider',
+        options: {},
+        events: {},
 
-        _eventNames: 'render show updateScrollbarPosition updateThumbListPosition',
+        _eventNames: 'show updateScrollbarPosition updateThumbListPosition',
 
         _width: 0,
         _itemWidth: 0,
@@ -251,8 +249,6 @@
                 o = this.options,
                 items = this._items.empty().show(),
                 index = 0, total = o.photos.length;
-
-            this.trigger('beforeRender');
 
             // 构建列表
             $.each(o.photos, function(index, photo) {
@@ -328,7 +324,6 @@
                 this.renderScrollbar();
             }
 
-            this.trigger('afterRender');
             return this;
         },
         show: function(index) {
@@ -471,6 +466,138 @@
         }
     });
 
+    var Pager = Base.extend({
+        OPTIONS: {
+            element: null,
+            total: 0,
+            visible: 9,
+            current: 0,
+            currentClass: 'current',
+            center: false
+        },
+        name: 'pager',
+        options: {},
+        events: {},
+
+        _current: 0,
+        _total: 1,
+
+        _prev: null,
+        _next: null,
+        _items: null,
+
+        _eventNames: 'prev next jumpTo show',
+
+        init: function(options) {
+            this.parent(options);
+
+            options = this.options;
+            this._prev = this.find('prev');
+            this._next = this.find('next');
+            this._items = this.find('items').empty();
+            this._total = options.total || 1;
+
+            this.render(options.current || 1);
+            return this;
+        },
+        render: function(current) {
+            var self = this;
+
+            this._prev.click(function() {
+                self.prev();
+            });
+            this._next.click(function() {
+                self.next();
+            });
+
+            // 显示当前页码
+            this.jumpTo(current);
+
+            return this;
+        },
+        renderItems: function(current) {
+            var self = this,
+                o = this.options,
+                half = Math.floor((o.visible - 1) / 2),
+                total = this._total,
+                start = Math.max(1, Math.min(current - half, total - o.visible + 1)),
+                end = Math.min(total, Math.max(current + half, start + o.visible - 1));
+
+            // 清空页码区域
+            this._items.empty();
+
+            // 回到第一页
+            if (start !== 1) {
+                $('<li data-pager-index="1"><a href="javascript:void(0);" hideFocus="true">1 …</a></li>').appendTo(this._items);
+            }
+
+            // 生成页码
+            for (var i = start; i <= end; i++) {
+                $('<li data-pager-index="' + i + '"><a href="javascript:void(0);" hideFocus="true">' + i + '</a></li>').appendTo(this._items);
+            }
+
+            // 跳到最后一页
+            if (end !== total) {
+                $('<li data-pager-index="' + total + '"><a href="javascript:void(0);" hideFocus="true">… ' + total + '</a></li>').appendTo(this._items);
+            }
+
+            this._items.children().click(function(ev) {
+                var page = parseInt($(this).attr('data-pager-index'));
+                if (! page || page === self._current) {
+                    return false;
+                }
+                self.jumpTo(page);
+                ev.preventDefault();
+            });
+
+            this._items.find('[data-pager-index=' + current + ']').addClass(o.currentClass);
+
+            // 居中显示
+            if (o.center) {
+                this.element.css({
+                    left: Math.floor((this.element.parent().innerWidth() - this.element.outerWidth()) / 2)
+                });
+            }
+
+            return this;
+        },
+        prev: function() {
+            this.show(this._current - 1, 'prev');
+            return this;
+        },
+        next: function() {
+            this.show(this._current + 1, 'next');
+            return this;
+        },
+        jumpTo: function(index) {
+            this.show(index, 'jumpTo');
+            return this;
+        },
+        show: function(index, event) {
+            if (index === this._current) {
+                return this;
+            }
+
+            event = ucfirst(event);
+            this.trigger('beforeShow', [index, 'before' + event]);
+
+            // 序号合法判断，放在这里是为了能够监听到 beforeShow 事件的不规范序号，
+            // 如监听第一个之前或最后一个之后的事件
+            if (index <= 0 || index > this._total) {
+                return false;
+            }
+
+            this.trigger('before' + event, [index]);
+
+            this.renderItems(index);
+            this._current = index;
+
+            this.trigger('after' + event, [index]);
+            this.trigger('afterShow', [index, 'after' + event]);
+            return this;
+        }
+    });
+
     /**
      * 以分页列表方式展示小图
      *
@@ -483,11 +610,28 @@
             photoWidth: 100,
             photoHeight: 75,
             currentClass: 'current',
-            current: 0
+            current: 0,
+            pagerHeight: 50,
         },
         name: 'photolist',
+        options: {},
+        events: {},
+        pager: null,
 
-        _eventNames: 'render show',
+        _items: null,
+
+        _width: 0,
+        _height: 0,
+        _itemWidth: 0,
+        _itemHeight: 0,
+        _rendered: false,
+
+        _pagesize: 1,
+        _totalPage: 1,
+        _current: 0,
+        _currentPage: 1,
+
+        _eventNames: 'show hide select',
 
         init: function(options) {
             this.parent(options);
@@ -495,15 +639,122 @@
             if (! isArray(this.options.photos)) {
                 this.options.photos = [];
             }
+
+            options = this.options;
+            this._items = this.find('items');
+            this._current = options.current || 0;
+
+            // 当元素为可见时渲染，否则宽度和高度获取不正确
+            if (this.element.is(':visible')) {
+                this.render();
+            }
+
+            return this;
         },
         render: function() {
+            var self = this,
+                o = this.options,
+                pager = this.pager,
+                item;
 
+            this._width = this.element.innerWidth();
+            this._height = this.element.innerHeight();
+
+            // 探测单个图片的大小
+            this._items.empty();
+            item = this.renderItem(o.photos[0], 0);
+            item.appendTo(this._items);
+            this._itemWidth = item.outerWidth(true);
+            this._itemHeight = item.outerHeight(true);
+            item.remove();
+
+            this._pagesize = Math.floor(this._width / this._itemWidth) * Math.floor((this._height - o.pagerHeight) / this._itemHeight);
+            this._totalPage = Math.ceil(o.photos.length / this._pagesize);
+            this._currentPage = Math.ceil(o.current / this._pagesize);
+
+            this.pager = new Pager({
+                element: this.find('pager'),
+                total: this._totalPage,
+                current: this._currentPage,
+                center: true,
+                afterShow: function(page) {
+                    console.info(page);
+                    self.renderPage(page);
+                }
+            });
+
+            this._rendered = true;
+            return this;
         },
-        show: function() {
+        renderItem: function(image, index) {
+            var self = this,
+                item = $('<li><a href="javascript:void(0);" hideFocus="true"></a></li>');
+            item.attr('data-photolist-index', index);
+            item.find('a').css('background', '#000 url(' + (image.small || image.thumb) + ') no-repeat center center').click(function() {
+                self.select(index);
+                return false;
+            });
+            return item;
+        },
+        renderPage: function(page) {
+            var self = this,
+                o = this.options,
+                start = Math.max(0, (page - 1)) * this._pagesize,
+                photos = o.photos.slice(start, start + this._pagesize),
+                item;
 
+            this._items.empty();
+            $.each(photos, function(index, photo) {
+                item = self.renderItem(photo, start + index).appendTo(self._items);
+            });
+            this.select(this._current);
+
+            return this;
+        },
+        show: function(index) {
+            var page;
+
+            this.trigger('beforeShow', [index]);
+
+            this.element.show();
+
+            if (! this._rendered) {
+                this.render();
+            }
+
+            if (index !== undefined) {
+                index = parseInt(index);
+                if (index !== this._current) {
+                    this._current = index;
+                    this._currentPage = Math.ceil(index / this._pagesize);
+                    this.pager.jumpTo(this._currentPage);
+                }
+            }
+
+            this.trigger('afterShow', [index]);
+            return this;
         },
         hide: function() {
+            this.trigger('beforeHide');
 
+            this.element.hide();
+
+            this.trigger('afterHide');
+            return this;
+        },
+        select: function(index) {
+            var item = this._items.find('[data-photolist-index=' + index + ']');
+            if (! item.length) {
+                return false;
+            }
+
+            this.trigger('beforeSelect', [index, item]);
+
+            item.siblings().removeClass(this.options.currentClass);
+            item.addClass(this.options.currentClass);
+
+            this.trigger('afterSelect', [index, item]);
+            return this;
         }
     });
 
@@ -522,14 +773,20 @@
 
             thumbWidth: 100,
             thumbHeight: 75,
-            thumbCurrentClass: 'current'
+            thumbCurrentClass: 'current',
+
+            smallWidth: 100,
+            smallHeight: 75,
+            smallCurrentClass: 'current'
         },
         name: 'gallery',
+        options: {},
+        events: {},
 
         slider: null,
-        photoList: null,
+        photolist: null,
 
-        _eventNames: 'render prev next jumpTo show slide stop fullscreen exit',
+        _eventNames: 'prev next jumpTo show slide stop fullscreen exit',
         _width: 0,
         _height: 0,
 
@@ -553,11 +810,14 @@
         _end: null,
         _autoplay: null,
         _autostop: null,
+        _viewList: null,
+        _viewOrigin: null,
 
         _hashParamRegexp: null,
         _playInterval: null,
 
         init: function(options) {
+            var self = this;
             this.parent(options);
 
             if (! isArray(this.options.photos)) {
@@ -576,15 +836,28 @@
             this._photoNext = this.find('photo-next');
             this._content = this.find('content');
             this._end = this.find('end').hide();
-            this.slider = new Slider({
+            this.find('slider').length && (this.slider = new Slider({
                 element: this.find('slider'),
                 photos: options.photos,
                 photoWidth: options.thumbWidth,
                 photoHeight: options.thumbHeight,
                 currentClass: options.thumbCurrentClass
-            });
+            }));
+            this._total && this.find('photolist').length && (this.photolist = new PhotoList({
+                element: this.find('photolist'),
+                photos: options.photos,
+                photoWidth: options.smallWidth || options.thumbWidth,
+                photoHeight: options.smallHeight || options.thumbHeight,
+                currentClass: options.smallCurrentClass || options.thumbCurrentClass,
+                afterSelect: function(index) {
+                    self.jumpTo(index);
+                    self.photolist.hide();
+                }
+            }));
             this._autoplay = this.find('auto-play');
             this._autostop = this.find('auto-stop').hide();
+            this._viewList = this.find('view-list');
+            this._viewOrigin = this.find('view-origin');
 
             this.render();
             return this;
@@ -685,6 +958,8 @@
             this.bind('afterShow', function(index) {
                 // 计数器
                 self._counterNow.html(index + 1);
+                // 查看原图
+                self._viewOrigin.attr('href', self.options.photos[index].big);
             });
 
             // 处理结束后显示的推荐信息
@@ -781,6 +1056,11 @@
             this.bind('afterStop', function() {
                 self._autoplay.css('display', '');
                 self._autostop.hide();
+            });
+
+            // 查看全部图片
+            this._viewList.click(function() {
+                self.photolist && self.photolist.show(self._current);
             });
 
             return this;

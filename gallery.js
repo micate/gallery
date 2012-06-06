@@ -199,7 +199,8 @@
             photoWidth: 100,
             photoHeight: 75,
             currentClass: 'current',
-            current: 0
+            current: 0,
+            btnMinWidth: 65
         },
         name: 'slider',
         options: {},
@@ -274,7 +275,7 @@
             // 计算一些数值
             this._visibleWidth = items.parent().innerWidth();
             this._visibleSize = Math.floor(this._visibleWidth / this._itemWidth);
-            this._itemsScrollWidth = (this._total - 1 - (this._visibleSize - this._total % this._visibleSize)) * this._itemWidth;
+            this._itemsScrollWidth = Math.max(this._total - this._visibleSize, 0) * this._itemWidth;
 
             // 按钮点击向左向右滚动
             if (this._total > this._visibleSize) {
@@ -368,11 +369,11 @@
                 btn = this._btn,
                 btnParent = btn.parent(),
                 btnParentWidth = btnParent.innerWidth(),
-                btnWidth = Math.floor(btnParentWidth * (
+                btnWidth = Math.max(this.options.btnMinWidth, Math.floor(btnParentWidth * (
                     this._total > this._visibleSize
                         ? (this._visibleSize || 1) / (this._total || 1)
                         : 1
-                )),
+                ))),
                 btnMaxLeftValue = (btnParentWidth - btnWidth) || 1,
                 itemsScrollWidth = this._itemsScrollWidth;
 
@@ -611,7 +612,7 @@
             photoHeight: 75,
             currentClass: 'current',
             current: 0,
-            pagerHeight: 50,
+            pagerHeight: 50
         },
         name: 'photolist',
         options: {},
@@ -678,7 +679,6 @@
                 current: this._currentPage,
                 center: true,
                 afterShow: function(page) {
-                    console.info(page);
                     self.renderPage(page);
                 }
             });
@@ -706,8 +706,8 @@
             this._items.empty();
             $.each(photos, function(index, photo) {
                 item = self.renderItem(photo, start + index).appendTo(self._items);
+                index === self._current && self.select(index, true);
             });
-            this.select(this._current);
 
             return this;
         },
@@ -726,8 +726,9 @@
                 index = parseInt(index);
                 if (index !== this._current) {
                     this._current = index;
-                    this._currentPage = Math.ceil(index / this._pagesize);
+                    this._currentPage = Math.ceil((index + 1) / this._pagesize);
                     this.pager.jumpTo(this._currentPage);
+                    this.select(index, true);
                 }
             }
 
@@ -742,18 +743,18 @@
             this.trigger('afterHide');
             return this;
         },
-        select: function(index) {
+        select: function(index, slient) {
             var item = this._items.find('[data-photolist-index=' + index + ']');
             if (! item.length) {
                 return false;
             }
 
-            this.trigger('beforeSelect', [index, item]);
+            ! slient && this.trigger('beforeSelect', [index, item]);
 
             item.siblings().removeClass(this.options.currentClass);
             item.addClass(this.options.currentClass);
 
-            this.trigger('afterSelect', [index, item]);
+            ! slient && this.trigger('afterSelect', [index, item]);
             return this;
         }
     });
@@ -786,14 +787,13 @@
         slider: null,
         photolist: null,
 
-        _eventNames: 'prev next jumpTo show slide stop fullscreen exit',
+        _eventNames: 'prev next jumpTo show slide stop exit',
         _width: 0,
         _height: 0,
 
         _current: -1,
         _total: 0,
 
-        _isFullscreen: false,
         _isPlaying: false,
 
         _hasPrev: false,
@@ -1006,12 +1006,6 @@
             } else {
                 this.jumpTo(0);
             }
-
-            // 全屏
-            this.find('fullscreen').click(function() {
-                self.fullscreen();
-                return false;
-            });
 
             // 绑定键盘事件
             o.keyboard && $(document).bind('keydown', function(ev) {
@@ -1281,35 +1275,12 @@
 
             this.trigger('afterStop', [this._current]);
             return this;
-        },
-
-        fullscreen: function() {
-            var elem = this._content[0];
-            if ((elem.fullScreenElement && elem.fullScreenElement !== null) ||    // alternative standard method
-                (!elem.mozFullScreen && !elem.webkitIsFullScreen)) {               // current working methods
-                if (elem.requestFullScreen) {
-                    elem.requestFullScreen();
-                } else if (elem.mozRequestFullScreen) {
-                    elem.mozRequestFullScreen();
-                } else if (elem.webkitRequestFullScreen) {
-                    elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-                }
-                // TODO 无法去除该样式
-                this.element.addClass('fullscreen');
-            }
-        },
-        exit: function() {
-            if (document.cancelFullScreen) {
-                document.cancelFullScreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.webkitCancelFullScreen) {
-                document.webkitCancelFullScreen();
-            }
-            this.element.removeClass('fullscreen');
         }
     });
 
+    root.Slider = Slider;
+    root.Pager = Pager;
+    root.PhotoList = PhotoList;
     root.Gallery = Gallery;
 
     $.fn.gallery = function(elem, options) {

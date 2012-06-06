@@ -54,7 +54,7 @@
                     <a data-gallery="view-list" class="gallery-view-list" href="javascript:void(0);" hideFocus="true">全部图片</a>
                 </span>
                 <span style="float: left;">
-                    <a data-gallery="fullscreen" class="gallery-fullscreen" href="javascript:void(0);" hideFocus="true">全屏</a>
+                    <!--<a data-gallery="fullscreen" class="gallery-fullscreen" href="javascript:void(0);" hideFocus="true">全屏</a>-->
                     <a data-gallery="auto-play" class="gallery-auto-play" href="javascript:void(0);" hideFocus="true">幻灯播放</a>
                     <a data-gallery="auto-stop" class="gallery-auto-stop" href="javascript:void(0);" hideFocus="true">停止播放</a>
                 </span>
@@ -171,6 +171,7 @@
         preload: 3
     }));*/
     $(function() {
+        //console.profile('gallery');
         var gallery = new Gallery({
             element: '#doc .mod-gallery',
             /*photos: [
@@ -381,6 +382,7 @@
             templatePhotoSmall: '',
             templatePhotoThumb: ''
         });
+        //console.profileEnd('gallery');
     });
 </script>
 
